@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading.RateLimiting;
 using BambooCardTask.Interfaces;
 using BambooCardTask.Models;
 using BambooCardTask.Routes;
@@ -19,6 +20,21 @@ builder.Services.AddHttpClient("ExchangeRateClient", client =>
         throw new InvalidOperationException("CurrencyExchange:ExchangeRateApiUrl is not configured in appsettings.json");
     }
     client.BaseAddress = new Uri(baseAddress);
+});
+
+// Rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
 });
 
 // Configure JSON serialization options
@@ -45,7 +61,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
+app.UseRateLimiter();
 app.UseResponseCaching();
 
 app.Use(async (context, next) =>
