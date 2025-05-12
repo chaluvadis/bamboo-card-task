@@ -44,12 +44,10 @@ public class HistoricalExchangeRatesRequest
     public string FromCurrency { get; set; } = string.Empty;
 
     [Required]
-    [ValidStartDate]
-    public DateOnly StartDate { get; set; }
+    public DateTime StartDate { get; set; }
 
     [Required]
-    [ValidEndDate]
-    public DateOnly EndDate { get; set; }
+    public DateTime EndDate { get; set; }
 }
 
 public class HistoricalExchangeRatesResponse

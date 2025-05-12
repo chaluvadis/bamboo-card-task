@@ -33,10 +33,5 @@ Content-Type: application/json
 {
   "startDate": "2025-05-01",
   "endDate": "2025-05-31",
-  "baseCurrency": "EUR"
+  "fromCurrency": "EUR"
 }
-
-
-###
-GET https://api.frankfurter.app/latest?baseCurrency=EUR
-Accept: application/json

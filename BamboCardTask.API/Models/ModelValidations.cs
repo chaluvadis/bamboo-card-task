@@ -31,49 +31,49 @@ public class ValidCurrencyListAttribute : ValidationAttribute
     }
 }
 
-public class ValidStartDateAttribute : ValidationAttribute
-{
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
-    {
-        if (value is not DateOnly startDate)
-        {
-            return new ValidationResult("Invalid start date.");
-        }
+// public class ValidStartDateAttribute : ValidationAttribute
+// {
+//     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+//     {
+//         if (value is not DateOnly startDate)
+//         {
+//             return new ValidationResult("Invalid start date.");
+//         }
 
-        if (startDate > DateOnly.FromDateTime(DateTime.Now))
-        {
-            return new ValidationResult("Start date cannot be a future date.");
-        }
+//         if (startDate > DateOnly.FromDateTime(DateTime.Now))
+//         {
+//             return new ValidationResult("Start date cannot be a future date.");
+//         }
 
-        return ValidationResult.Success;
-    }
-}
+//         return ValidationResult.Success;
+//     }
+// }
 
-public class ValidEndDateAttribute : ValidationAttribute
-{
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
-    {
-        if (value is not DateOnly endDate)
-        {
-            return new ValidationResult("Invalid end date.");
-        }
+// public class ValidEndDateAttribute : ValidationAttribute
+// {
+//     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+//     {
+//         if (value is not DateOnly endDate)
+//         {
+//             return new ValidationResult("Invalid end date.");
+//         }
 
-        var instance = validationContext.ObjectInstance as HistoricalExchangeRatesRequest;
-        if (instance == null)
-        {
-            return new ValidationResult("Invalid object instance.");
-        }
+//         var instance = validationContext.ObjectInstance as HistoricalExchangeRatesRequest;
+//         if (instance == null)
+//         {
+//             return new ValidationResult("Invalid object instance.");
+//         }
 
-        if (endDate < instance.StartDate)
-        {
-            return new ValidationResult("End date cannot be earlier than start date.");
-        }
+//         if (endDate < instance.StartDate)
+//         {
+//             return new ValidationResult("End date cannot be earlier than start date.");
+//         }
 
-        if (endDate > DateOnly.FromDateTime(DateTime.Now))
-        {
-            return new ValidationResult("End date cannot be a future date.");
-        }
+//         if (endDate > DateOnly.FromDateTime(DateTime.Now))
+//         {
+//             return new ValidationResult("End date cannot be a future date.");
+//         }
 
-        return ValidationResult.Success;
-    }
-}
+//         return ValidationResult.Success;
+//     }
+// }
