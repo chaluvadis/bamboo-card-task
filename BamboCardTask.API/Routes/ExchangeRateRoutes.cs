@@ -10,9 +10,13 @@ public static class ExchangeRateRoutes
         app.MapGet("api/exchange-rates/latest",
         async (
             IExchangeRateService exchangeRateService,
-            string baseCurrency
+            IConfiguration configuration,
+            string? baseCurrency
         ) =>
         {
+            // Use baseCurrency from appsettings.json if not provided
+            baseCurrency ??= configuration["CurrencyExchange:BaseCurrency"] ?? "EUR";
+
             // Fetch data from the service
             var exchangeRates = await exchangeRateService.GetLatestExchangeRatesAsync(baseCurrency);
 

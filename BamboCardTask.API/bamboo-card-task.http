@@ -4,6 +4,9 @@ GET {{bamboo_card_task_HostAddress}}/api/exchange-rates/latest?baseCurrency=EUR
 Accept: application/json
 
 ###
+GET {{bamboo_card_task_HostAddress}}/api/exchange-rates/latest
+Accept: application/json
 
+###
 GET https://api.frankfurter.app/latest?baseCurrency=EUR
 Accept: application/json
