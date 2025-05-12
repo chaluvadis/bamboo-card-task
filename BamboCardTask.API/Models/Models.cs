@@ -2,41 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BambooCardTask.Models;
 
-public class ValidCurrencyListAttribute : ValidationAttribute
+public class CurrencyExchangeConfig
 {
-    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
-    {
-        if (value is not List<string> currencies)
-        {
-            return new ValidationResult("Invalid currency list.");
-        }
-
-        if (currencies.Count == 0)
-        {
-            return new ValidationResult("Please provide at least one target currency.");
-        }
-
-        var configuration = (IConfiguration)validationContext.GetService(typeof(IConfiguration))!;
-        var excludedCurrencies = configuration.GetSection("CurrencyExchange:ExcludedCurrencies").Get<List<string>>()
-            ?? ["TRY", "PLN", "THB", "MXN"];
-
-        var invalidCurrencies = currencies.Where(currency => excludedCurrencies.Contains(currency)).ToList();
-
-        if (invalidCurrencies.Any())
-        {
-            return new ValidationResult($"Currencies {string.Join(", ", invalidCurrencies)} are not allowed process");
-        }
-
-        return ValidationResult.Success;
-    }
+    public string BaseCurrency { get; set; } = string.Empty;
+    public string ExchangeRateApiUrl { get; set; } = string.Empty;
+    public List<string> ExcludedCurrencies { get; set; } = [];
 }
-
-
-
-public record CurrencyExchangeConfig(
-    string BaseCurrency,
-    string ExchangeRateApiUrl
-);
 
 public class CurrencyConversionRequest
 {
@@ -49,17 +20,42 @@ public class CurrencyConversionRequest
     public List<string> TargetCurrencies { get; set; } = [];
 }
 
-public record ExchangeRates(
-    float Amount,
-    string Base,
-    DateOnly Date,
-    Dictionary<string, double> Rates
-);
-
-public record ConversionRates
+public class ExchangeRatesResponse
 {
     public float Amount { get; set; }
     public string Base { get; set; } = string.Empty;
     public DateOnly Date { get; set; }
     public Dictionary<string, double> Rates { get; set; } = [];
+}
+
+
+public class ConversionRatesResponse
+{
+    public float Amount { get; set; }
+    public string Base { get; set; } = string.Empty;
+    public DateOnly Date { get; set; }
+    public Dictionary<string, double> Rates { get; set; } = [];
+}
+
+public class HistoricalExchangeRatesRequest
+{
+    [Required]
+    [RegularExpression("^[A-Z]{3}$", ErrorMessage = "FromCurrency must be a 3-letter uppercase string.")]
+    public string FromCurrency { get; set; } = string.Empty;
+
+    [Required]
+    [ValidStartDate]
+    public DateOnly StartDate { get; set; }
+
+    [Required]
+    [ValidEndDate]
+    public DateOnly EndDate { get; set; }
+}
+
+public class HistoricalExchangeRatesResponse
+{
+    public string Base { get; set; } = string.Empty;
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public Dictionary<DateOnly, Dictionary<string, double>> Rates { get; set; } = new();
 }

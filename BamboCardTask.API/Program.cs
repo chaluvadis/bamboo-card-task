@@ -13,12 +13,12 @@ builder.Services.Configure<CurrencyExchangeConfig>(builder.Configuration.GetSect
 // Register HttpClient as a service with default base address
 builder.Services.AddHttpClient("ExchangeRateClient", client =>
 {
-    var apiUrl = builder.Configuration["CurrencyExchange:ExchangeRateApiUrl"];
-    if (string.IsNullOrEmpty(apiUrl))
+    var baseAddress = builder.Configuration["CurrencyExchange:ExchangeRateApiUrl"];
+    if (string.IsNullOrEmpty(baseAddress))
     {
         throw new InvalidOperationException("CurrencyExchange:ExchangeRateApiUrl is not configured in appsettings.json");
     }
-    client.BaseAddress = new Uri(apiUrl);
+    client.BaseAddress = new Uri(baseAddress);
 });
 
 // Configure JSON serialization options

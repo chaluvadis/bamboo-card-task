@@ -26,6 +26,16 @@ Content-Type: application/json
   "targetCurrencies": ["USD", "TRY" , "PLN", "THB"]
 }
 
+###
+POST {{bamboo_card_task_HostAddress}}/api/exchange-rates/historical
+Content-Type: application/json
+
+{
+  "startDate": "2025-05-01",
+  "endDate": "2025-05-31",
+  "baseCurrency": "EUR"
+}
+
 
 ###
 GET https://api.frankfurter.app/latest?baseCurrency=EUR

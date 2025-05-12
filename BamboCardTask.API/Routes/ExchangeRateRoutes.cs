@@ -1,5 +1,6 @@
 using BambooCardTask.Interfaces;
 using BambooCardTask.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BambooCardTask.Routes;
 
@@ -45,5 +46,23 @@ public static class ExchangeRateRoutes
             }
             return Results.Ok(exchangeRates);
         }).WithName("ConvertCurrency");
+
+        // Add endpoint for historical exchange rates with pagination
+        app.MapPost("api/exchange-rates/historical",
+        async (
+            IExchangeRateService exchangeRateService,
+            [FromBody] HistoricalExchangeRatesRequest historicalExchangeRates
+        ) =>
+        {
+            // Fetch historical exchange rates
+            var historicalRates = await exchangeRateService.GetHistoricalExchangeRatesAsync(historicalExchangeRates);
+
+            if (historicalRates == null)
+            {
+                return Results.Problem("Failed to fetch historical exchange rates.");
+            }
+
+            return Results.Ok(historicalRates);
+        }).WithName("GetHistoricalExchangeRates");
     }
 }
