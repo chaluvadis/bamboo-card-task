@@ -1,13 +1,15 @@
 # Bamboo Card Task
 
 ## Overview
-This project is a .NET 10 web API application that provides exchange rate services. It includes endpoints for retrieving the latest exchange rates, converting currencies, and more.
+This project is a .NET 10 web API application that provides exchange rate services. It includes endpoints for retrieving the latest exchange rates, converting currencies, and fetching historical exchange rates with pagination.
 
 ## Features
 - Retrieve the latest exchange rates for a specific base currency.
 - Convert amounts between different currencies.
 - Exclude specific currencies from conversion.
-- Fetch historical exchange rates with pagination.
+- Fetch historical exchange rates for a given period with pagination.
+- Retry policies with exponential backoff for handling intermittent API failures.
+- Response caching for improved performance.
 
 ## Project Structure
 - **BamboCardTask.API**: Contains the main API application.
@@ -60,12 +62,32 @@ This project is a .NET 10 web API application that provides exchange rate servic
 ### 1. Retrieve Latest Exchange Rates
 - **GET** `/api/exchange-rates/latest?baseCurrency=EUR`
 
+### 2. Currency Conversion
+- **POST** `/api/exchange-rates/convert`
+  ```json
+  {
+    "fromCurrency": "EUR",
+    "targetCurrencies": ["USD", "AUD"]
+  }
+  ```
+
+### 3. Historical Exchange Rates with Pagination
+- **POST** `/api/exchange-rates/historical`
+  ```json
+  {
+    "startDate": "2025-05-01",
+    "endDate": "2025-05-31",
+    "fromCurrency": "EUR"
+  }
+  ```
+
 ## Configuration
 - Update `appsettings.json` or `appsettings.Development.json` to configure the `CurrencyExchange` settings:
   ```json
   "CurrencyExchange": {
     "BaseCurrency": "EUR",
-    "ExchangeRateApiUrl": "https://api.frankfurter.app/latest"
+    "ExchangeRateApiUrl": "https://api.frankfurter.dev/v1/",
+    "ExcludedCurrencies": ["TRY", "PLN", "THB", "MXN"]
   }
   ```
 
