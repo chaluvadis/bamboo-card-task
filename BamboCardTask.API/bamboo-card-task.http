@@ -3,9 +3,29 @@
 GET {{bamboo_card_task_HostAddress}}/api/exchange-rates/latest?baseCurrency=EUR
 Accept: application/json
 
+
 ###
 GET {{bamboo_card_task_HostAddress}}/api/exchange-rates/latest
 Accept: application/json
+
+###
+POST {{bamboo_card_task_HostAddress}}/api/exchange-rates/convert
+Content-Type: application/json
+
+{
+  "fromCurrency": "EUR",
+  "targetCurrencies": ["USD", "AUD"]
+}
+
+###
+POST {{bamboo_card_task_HostAddress}}/api/exchange-rates/convert
+Content-Type: application/json
+
+{
+  "fromCurrency": "EUR",
+  "targetCurrencies": ["USD", "TRY" , "PLN", "THB"]
+}
+
 
 ###
 GET https://api.frankfurter.app/latest?baseCurrency=EUR

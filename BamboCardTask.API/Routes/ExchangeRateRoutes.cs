@@ -1,4 +1,5 @@
 using BambooCardTask.Interfaces;
+using BambooCardTask.Models;
 
 namespace BambooCardTask.Routes;
 
@@ -27,5 +28,22 @@ public static class ExchangeRateRoutes
 
             return Results.Ok(exchangeRates);
         }).WithName("GetLatestExchangeRates");
+
+        // Add endpoint for currency conversion
+        app.MapPost("api/exchange-rates/convert",
+        async (
+            IExchangeRateService exchangeRateService,
+            CurrencyConversionRequest currencyConversionRequest
+        ) =>
+        {
+            // Fetch exchange rates
+            var exchangeRates = await exchangeRateService.GetConversionRatesAsync(currencyConversionRequest);
+
+            if (exchangeRates == null)
+            {
+                return Results.Problem("Failed to fetch exchange rates.");
+            }
+            return Results.Ok(exchangeRates);
+        }).WithName("ConvertCurrency");
     }
 }

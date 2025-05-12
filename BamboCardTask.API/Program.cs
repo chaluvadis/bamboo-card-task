@@ -28,6 +28,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.WriteIndented = true;
 });
 
+builder.Services.AddValidation();
+builder.Services.AddProblemDetails();
+
 builder.Services.AddResponseCaching();
 
 // Register ExchangeRateService as a service
