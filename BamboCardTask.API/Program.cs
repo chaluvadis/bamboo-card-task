@@ -5,13 +5,13 @@ using BambooCardTask.Models;
 using BambooCardTask.Routes;
 using BambooCardTask.Services;
 using Microsoft.Net.Http.Headers;
-
+using Polly;
 var builder = WebApplication.CreateBuilder(args);
 
 // Bind CurrencyExchange configuration
 builder.Services.Configure<CurrencyExchangeConfig>(builder.Configuration.GetSection("CurrencyExchange"));
 
-// Register HttpClient as a service with default base address
+// Register HttpClient as a service with default base address and policies
 builder.Services.AddHttpClient("ExchangeRateClient", client =>
 {
     var baseAddress = builder.Configuration["CurrencyExchange:ExchangeRateApiUrl"];
@@ -20,7 +20,12 @@ builder.Services.AddHttpClient("ExchangeRateClient", client =>
         throw new InvalidOperationException("CurrencyExchange:ExchangeRateApiUrl is not configured in appsettings.json");
     }
     client.BaseAddress = new Uri(baseAddress);
-});
+})
+.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.WaitAndRetryAsync(3, retryAttempt =>
+        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+        .AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
+        handledEventsAllowedBeforeBreaking: 5,
+        durationOfBreak: TimeSpan.FromSeconds(30)));
 
 // Rate limiting
 builder.Services.AddRateLimiter(options =>
