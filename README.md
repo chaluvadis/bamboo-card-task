@@ -124,7 +124,52 @@ This project is a .NET 10 web API application that provides exchange rate servic
    ```bash
    dotnet run --project BambooCardTask.Api.csproj
    ```
+
 7. The API will be available at `http://localhost:5117` by default.
+
+
+## Running with Docker (.NET 10 Preview 3) for Dev, Test, and PROD Environments
+
+You can build and run the API in a container using the provided Dockerfile (uses .NET 10 preview 3 images). The solution is ready for deployment in **Development**, **Test**, and **Production** environments using environment variables and configuration files.
+
+### 1. Build the Docker image
+From the root of the repository:
+```bash
+docker build -t bamboo-card-task .
+```
+
+### 2. Run the container for a specific environment
+You can specify the environment by setting the `ASPNETCORE_ENVIRONMENT` variable. The API will use the corresponding `appsettings.{Environment}.json` file (e.g., `appsettings.Development.json`, `appsettings.Test.json`, `appsettings.Production.json`).
+
+**Development:**
+```bash
+docker run -p 5117:5117 -e ASPNETCORE_ENVIRONMENT=Development bamboo-card-task
+```
+
+**Test:**
+```bash
+docker run -p 5117:5117 -e ASPNETCORE_ENVIRONMENT=Test bamboo-card-task
+```
+
+**Production:**
+```bash
+docker run -p 5117:5117 -e ASPNETCORE_ENVIRONMENT=Production bamboo-card-task
+```
+
+The API will be available at [http://localhost:5117](http://localhost:5117).
+
+#### How it works
+- The Dockerfile uses the official .NET 10 preview 3 SDK image to build and publish the app, then runs it with the ASP.NET runtime image.
+- The published output is copied to the runtime image for efficient, production-like execution.
+- The default port exposed is 5117 (see `EXPOSE 5117` and `ENTRYPOINT` in the Dockerfile).
+- The environment is set via the `ASPNETCORE_ENVIRONMENT` variable, which controls which configuration file is loaded.
+
+#### Customizing
+- To use a different port, change the `EXPOSE` and `docker run -p` values.
+- To set additional environment variables (e.g., connection strings, secrets), use the `-e` flag with `docker run` or add `ENV` lines in the Dockerfile.
+- Add or update `appsettings.Development.json`, `appsettings.Test.json`, and `appsettings.Production.json` as needed for each environment.
+
+> **Note:** You must have Docker installed. The .NET 10 preview images are used for both build and runtime stages.
 
 ## Testing
 1. Navigate to the test project directory:
