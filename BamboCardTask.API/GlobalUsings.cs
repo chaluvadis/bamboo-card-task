@@ -1,15 +1,16 @@
 // framework dependencies
 global using System.ComponentModel.DataAnnotations;
+global using System.Diagnostics;
+global using System.Security.Claims;
 global using System.Text;
 global using System.Text.Json;
 global using System.Threading.RateLimiting;
-
 // project dependencies
 global using BambooCardTask.Interfaces;
+global using BambooCardTask.Middleware;
 global using BambooCardTask.Models;
 global using BambooCardTask.Routes;
 global using BambooCardTask.Services;
-
 // third-party dependencies
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Mvc;

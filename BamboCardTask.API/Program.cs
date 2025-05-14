@@ -1,4 +1,4 @@
-using System.Security.Claims;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -152,19 +152,8 @@ if (app.Environment.IsDevelopment())
 app.UseRateLimiter();
 app.UseResponseCaching();
 
-app.Use(async (context, next) =>
-{
-    context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
-    {
-        Public = true,
-        MaxAge = TimeSpan.FromSeconds(60)
-    };
-
-    // Add Vary header for the User-Agent
-    context.Response.Headers[HeaderNames.Vary] = "User-Agent";
-
-    await next();
-});
+app.UseMiddleware<CacheControlMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 
