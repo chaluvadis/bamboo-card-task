@@ -1,4 +1,4 @@
-using Serilog; // Added for structured logging
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,8 +41,7 @@ builder.Services.AddHttpClient("ExchangeRateClient", client =>
     }
     client.BaseAddress = new Uri(baseAddress);
 })
-.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.WaitAndRetryAsync(3, retryAttempt =>
-        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
+.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))))
 .AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
         handledEventsAllowedBeforeBreaking: 5,
         durationOfBreak: TimeSpan.FromSeconds(30)));
@@ -81,6 +80,63 @@ builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
 
 builder.Services.AddOpenApi();
 
+// Retrieve the JWT secret key from configuration
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT secret key is not configured.");
+
+// Configure JWT authentication with enhanced security
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero, // Reduce clock skew for token expiration
+            RequireSignedTokens = true, // Ensure tokens are signed
+            ValidAlgorithms = ["HS512"], // Explicitly enforce HS512 algorithm
+            RoleClaimType = ClaimTypes.Role, // Map role claim
+            NameClaimType = ClaimTypes.Email // Map email claim
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Log.Warning("Authentication failed: {Error}", context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Log.Warning("Authentication challenge: {Error}", context.ErrorDescription);
+                return Task.CompletedTask;
+            },
+            OnForbidden = context =>
+            {
+                Log.Warning("Access forbidden: {Path}", context.HttpContext.Request.Path);
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+// Add authorization policies with predefined roles
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
+});
+
+// Enforce HTTPS
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.RedirectStatusCode = StatusCodes.Status308PermanentRedirect;
+    options.HttpsPort = 443; // Default HTTPS port
+});
+
 var app = builder.Build();
 
 // Ensure Serilog is properly disposed on application shutdown
@@ -116,3 +172,5 @@ app.UseHttpsRedirection();
 app.MapExchangeRateRoutes();
 
 app.Run();
+
+

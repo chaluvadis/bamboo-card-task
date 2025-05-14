@@ -51,6 +51,7 @@ This project is a .NET 10 web API application that provides exchange rate servic
 - **BambooCardTask.Test**: Contains unit tests for the application.
 - **BambooCardTask.ServiceDefaults**: Provides shared service configurations, including resilience and observability.
 - **BambooCardTask.AppHost**: Hosts the application and manages startup configurations.
+- **BambooCardTask.JwtGenerator**: Facilitates the generation of JWT tokens for authentication and role-based access control.
 
 ## Prerequisites
 - .NET 10 SDK
@@ -93,6 +94,61 @@ This project is a .NET 10 web API application that provides exchange rate servic
    ```bash
    dotnet test
    ```
+
+## Testing JWT Authentication
+
+### 1. Generate a JWT Token
+- Use a tool like [jwt.io](https://jwt.io/) or write a script to generate a JWT token.
+- Ensure the token is signed with the same secret key (`Jwt:Key`) and includes the required claims (e.g., `role`).
+
+Example payload for a user:
+```json
+{
+  "sub": "user@bamboocard.ae",
+  "role": "User",
+  "iss": "bamboocard.ae",
+  "aud": "bamboocard.ae",
+  "exp": 1715731200
+}
+```
+
+Example payload for an admin:
+```json
+{
+  "sub": "admin@bamboocard.ae",
+  "role": "Admin",
+  "iss": "bamboocard.ae",
+  "aud": "bamboocard.ae",
+  "exp": 1715731200
+}
+```
+
+### 2. Add the Token to HTTP Requests
+- Include the token in the `Authorization` header of your HTTP requests.
+
+Example:
+```http
+GET http://localhost:5117/api/exchange-rates/latest
+Authorization: Bearer <your-jwt-token>
+```
+
+Update your `.http` file to include the `Authorization` header:
+```http
+@jwt_token = <your-jwt-token>
+
+GET {{bamboo_card_task_HostAddress}}/api/exchange-rates/latest
+Authorization: Bearer {{jwt_token}}
+Accept: application/json
+```
+
+### 3. Test Role-Based Access Control
+- Use a token with the `User` role to access user-specific endpoints.
+- Use a token with the `Admin` role to access admin-specific endpoints.
+- Verify that unauthorized access is denied with a `403 Forbidden` response.
+
+### 4. Automate Testing
+- Write integration tests using a library like `xUnit` or `NUnit`.
+- Mock the JWT authentication and test the behavior of your endpoints.
 
 ## Endpoints
 ### 1. Retrieve Latest Exchange Rates
@@ -138,6 +194,30 @@ This project is a .NET 10 web API application that provides exchange rate servic
    dotnet run --project BambooCardTask.AppHost.csproj
    ```
 3. The Aspire project will be available at the configured URLs in `appsettings.json` or `appsettings.Development.json`.
+
+### 3. JWT Token Generator
+- Introduced the `JwtTokenGenerator` project to facilitate the generation of JWT tokens.
+- This project is essential for creating tokens with claims such as `role` and `email`, which are used for authentication and role-based access control (RBAC) in the API.
+- Ensures secure and standardized token generation using the secret key defined in the API's configuration.
+
+#### Steps to Run the Project
+1. Navigate to the `JwtGenerator` project directory:
+   ```bash
+   cd BambooCardTask.JwtGenerator
+   ```
+2. Run the project:
+   ```bash
+   dotnet run --project BambooCardTask.JwtGenerator.csproj
+   ```
+
+#### Sample Output
+```
+JWT Token for User:
+eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJVc2VyIiwianRpIjoiYjU4MDcyMmUtYWIxZi00YmI2LWI4ZTctN2U0NGNmMDdlOTcxIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoidXNlckBiYW1ib29jYXJkLmFlIiwiZXhwIjoxNzQ3MjI0NDQwLCJpc3MiOiJiYW1ib29jYXJkLmFlIiwiYXVkIjoiYmFtYm9vY2FyZC5hZSJ9.IPkZGgwFkFw204G58Gc_EGpIIYlv9DWgqx9GhisvxMi2ffwibcIi1HKJ_10f7nbMnCogwP-ExYIjDw-VqFLxqQ
+
+JWT Token for Admin:
+eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImp0aSI6IjliYzI0NWJhLWVkYzgtNDM1NC05N2UzLTEzYTc1OTA5ZDljMSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFkbWluQGJhbWJvb2NhcmQuYWUiLCJleHAiOjE3NDcyMjQ0NDAsImlzcyI6ImJhbWJvb2NhcmQuYWUiLCJhdWQiOiJiYW1ib29jYXJkLmFlIn0.gFMKKCzTBqJc8Rlc5QGtkZInXdYRbS0E_o7si4Kw0DGG_pROdL8n5LzJ6cYeXHCiEjNf90avpvMgTp5srNV6bg
+```
 
 ## License
 This project is licensed under the MIT License.

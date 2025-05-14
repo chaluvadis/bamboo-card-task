@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization; // Added for RBAC
+
 namespace BambooCardTask.Routes;
 public static class ExchangeRateRoutes
 {
@@ -5,6 +7,7 @@ public static class ExchangeRateRoutes
     {
         // Add endpoint to retrieve latest exchange rates
         app.MapGet("api/exchange-rates/latest",
+        [Authorize(Policy = "UserOnly")] // Enforce RBAC for users
         async (
             IExchangeRateService exchangeRateService,
             IConfiguration configuration,
@@ -32,6 +35,7 @@ public static class ExchangeRateRoutes
 
         // Add endpoint for currency conversion
         app.MapPost("api/exchange-rates/convert",
+        [Authorize(Policy = "UserOnly")] // Enforce RBAC for users
         async (
             IExchangeRateService exchangeRateService,
             [FromServices] Serilog.ILogger logger, // Explicitly use Serilog.ILogger
@@ -55,6 +59,7 @@ public static class ExchangeRateRoutes
 
         // Add endpoint for historical exchange rates with pagination
         app.MapPost("api/exchange-rates/historical",
+        [Authorize(Policy = "AdminOnly")] // Enforce RBAC for admins
         async (
             IExchangeRateService exchangeRateService,
             [FromServices] Serilog.ILogger logger, // Explicitly use Serilog.ILogger
