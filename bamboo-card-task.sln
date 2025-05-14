@@ -7,10 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BambooCardTask.Api", "Bambo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BambooCardTask.Test", "BambooCardTask.Test\BambooCardTask.Test.csproj", "{C2D3E4F5-6789-0123-4567-89ABCDEF0123}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BambooCardTask.AppHost", "BambooCardTask.AppHost\BambooCardTask.AppHost.csproj", "{DC239015-C575-4496-924A-81FC3BA0F8B4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BambooCardTask.ServiceDefaults", "BambooCardTask.ServiceDefaults\BambooCardTask.ServiceDefaults.csproj", "{5B779008-8880-4051-A23B-65BD665E2830}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BambooCardTask.JwtGenerator", "BambooCardTask.JwtGenerator\BambooCardTask.JwtGenerator.csproj", "{223CA291-785E-4B33-8855-822930F4C9F9}"
 EndProject
 Global
