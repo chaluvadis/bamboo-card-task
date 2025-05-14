@@ -24,12 +24,15 @@ namespace BambooCardTask.Test.Configuration
             // Arrange
             var services = new ServiceCollection();
             var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string> { { "Provider:Name", "TestProvider" } })
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    { "Provider:Name", "TestProvider" }
+                })
                 .Build();
 
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(() => services.ConfigureHttpClient(configuration));
-            Assert.Equal("Configuration section for provider 'TestProvider' is not found.", exception.Message);
+            Assert.Equal("ExchangeRateApiUrl is not configured for provider 'TestProvider' in appsettings.json", exception.Message);
         }
 
         [Fact]
@@ -38,7 +41,7 @@ namespace BambooCardTask.Test.Configuration
             // Arrange
             var services = new ServiceCollection();
             var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     { "Provider:Name", "TestProvider" },
                     { "TestProvider:BaseCurrency", "USD" }
@@ -56,7 +59,7 @@ namespace BambooCardTask.Test.Configuration
             // Arrange
             var services = new ServiceCollection();
             var configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     { "Provider:Name", "TestProvider" },
                     { "TestProvider:BaseCurrency", "USD" },

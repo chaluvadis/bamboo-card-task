@@ -25,36 +25,22 @@ namespace BambooCardTask.Test.Models
         public void ValidCurrencyListAttribute_ShouldReturnError_WhenListContainsExcludedCurrencies()
         {
             // Arrange
-            var configurationMock = new Mock<IConfiguration>();
-            configurationMock.Setup(c => c.GetSection("CurrencyExchange:ExcludedCurrencies").Get<List<string>>())
-                .Returns(["TRY", "PLN"]);
-
             var attribute = new ValidCurrencyListAttribute();
-            var validationContext = new ValidationContext(new object())
-            {
-                Items = { { typeof(IConfiguration), configurationMock.Object } }
-            };
+            var validationContext = new ValidationContext(new object());
 
             // Act
             var result = attribute.GetValidationResult(new List<string> { "TRY", "USD" }, validationContext);
 
             // Assert
-            Assert.Equal("Invalid currency list.", result?.ErrorMessage);
+            Assert.Equal("Currencies TRY are not allowed to process.", result?.ErrorMessage);
         }
 
         [Fact]
         public void ValidCurrencyListAttribute_ShouldPass_WhenListIsValid()
         {
             // Arrange
-            var configurationMock = new Mock<IConfiguration>();
-            configurationMock.Setup(c => c.GetSection("CurrencyExchange:ExcludedCurrencies").Get<List<string>>())
-                .Returns(["TRY", "PLN"]);
-
             var attribute = new ValidCurrencyListAttribute();
-            var validationContext = new ValidationContext(new object())
-            {
-                Items = { { typeof(IConfiguration), configurationMock.Object } }
-            };
+            var validationContext = new ValidationContext(new object());
 
             // Act
             var result = attribute.GetValidationResult(new List<string> { "USD", "EUR" }, validationContext);

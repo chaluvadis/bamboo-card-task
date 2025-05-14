@@ -13,15 +13,13 @@ public class ValidCurrencyListAttribute : ValidationAttribute
             return new ValidationResult("Please provide at least one target currency.");
         }
 
-        var configuration = (IConfiguration)validationContext.GetService(typeof(IConfiguration))!;
-        var excludedCurrencies = configuration.GetSection("CurrencyExchange:ExcludedCurrencies").Get<List<string>>()
-            ?? ["TRY", "PLN", "THB", "MXN"];
+        var excludedCurrencies = new List<string> { "TRY", "PLN", "THB", "MXN" };
 
         var invalidCurrencies = currencies.Where(currency => excludedCurrencies.Contains(currency)).ToList();
 
         if (invalidCurrencies.Any())
         {
-            return new ValidationResult($"Currencies {string.Join(", ", invalidCurrencies)} are not allowed process");
+            return new ValidationResult($"Currencies {string.Join(", ", invalidCurrencies)} are not allowed to process.");
         }
 
         return ValidationResult.Success;

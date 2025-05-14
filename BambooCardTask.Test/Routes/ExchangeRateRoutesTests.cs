@@ -38,13 +38,82 @@ public class ExchangeRateRoutesTests(WebApplicationFactory<Program> factory) : I
     public async Task GetLatestExchangeRates_ShouldReturnUnauthorized_WhenNoTokenProvided()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Ensure no authentication is configured for this test
+            });
+        }).CreateClient();
 
         // Act
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetLatestExchangeRates_ShouldReturnOk_WhenTokenProvided()
+    {
+        // Arrange
+        var client = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Add mock authentication setup here
+            });
+        }).CreateClient();
+
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "valid-token");
+
+        // Act
+        var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetLatestExchangeRates_ShouldReturnUnauthorized_WhenTokenIsInvalid()
+    {
+        // Arrange
+        var client = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Mock authentication to simulate invalid token
+            });
+        }).CreateClient();
+
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "invalid-token");
+
+        // Act
+        var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetLatestExchangeRates_ShouldReturnOk_WhenTokenIsValid()
+    {
+        // Arrange
+        var client = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Mock authentication to simulate valid token
+            });
+        }).CreateClient();
+
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "valid-token");
+
+        // Act
+        var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

@@ -16,9 +16,6 @@
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../BambooCardTask.ServiceDefaults/BambooCardTask.ServiceDefaults.csproj" />
-  </ItemGroup>
  <PropertyGroup>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.Http.Validation.Generated</InterceptorsNamespaces>
   </PropertyGroup>
