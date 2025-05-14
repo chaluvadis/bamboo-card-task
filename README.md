@@ -46,12 +46,53 @@ This project is a .NET 10 web API application that provides exchange rate servic
 }
 ```
 
-## Project Structure
-- **BamboCardTask.API**: Contains the main API application, including controllers, services, and configuration.
-- **BambooCardTask.Test**: Contains unit tests for the application.
-- **BambooCardTask.ServiceDefaults**: Provides shared service configurations, including resilience and observability.
-- **BambooCardTask.AppHost**: Hosts the application and manages startup configurations.
-- **BambooCardTask.JwtGenerator**: Facilitates the generation of JWT tokens for authentication and role-based access control.
+
+## Project Structure & Key Concepts
+- **BamboCardTask.API**: Main API application. Contains:
+  - **Routes**: All endpoints are defined in a single place using minimal APIs and grouped for clarity. Each route delegates to a service and uses a shared helper for error handling and logging.
+  - **Services**: Business logic is encapsulated in services (e.g., `ExchangeRateService`). Services use a shared private method to handle HTTP and deserialization errors, ensuring DRY code and consistent error handling.
+  - **Configuration**: Provider-specific and JWT configuration is loaded from `appsettings.json`.
+  - **Middleware**: Custom middleware for logging, correlation IDs, and cache control.
+- **BambooCardTask.Test**: Unit and integration tests. Includes:
+  - Test authentication handler for simulating authorized/unauthorized requests.
+  - Tests for all service and route scenarios, including error and edge cases.
+- **BambooCardTask.JwtGenerator**: Generates JWT tokens for local testing and automation.
+
+## Code Organization & Extensibility
+
+### 1. Minimal API & Route Grouping
+- All endpoints are defined in `Routes/ExchangeRateRoutes.cs` using minimal API syntax.
+- Endpoints are grouped (e.g., `/api/exchange-rates`) and tagged for discoverability.
+- Each endpoint delegates to a service and uses a shared helper for error handling and logging, so you only need to focus on business logic.
+
+### 2. Service Layer
+- All business logic and external API calls are in the `Services` folder.
+- The `ExchangeRateService` uses a single private method (`HandleServiceCall<T>`) to handle HTTP and deserialization errors, so you never need to repeat try/catch blocks.
+- To add a new external API or business rule, add a method to the service and call it from a new route.
+
+### 3. Error Handling
+- Error handling is DRY: all HTTP and deserialization errors are caught in one place in the service layer.
+- Routes use a shared helper to return the correct HTTP status and log errors.
+
+### 4. Logging
+- Serilog is used for structured logging throughout the app and tests.
+- All service and route actions are logged with context for easy debugging.
+
+### 5. Testing
+- Tests use a custom authentication handler to simulate all auth scenarios.
+- Tests cover success, error, and edge cases for both services and routes.
+
+### 6. Extending the Codebase
+- **To add a new endpoint:**
+  1. Add a method to the relevant service (e.g., `ExchangeRateService`).
+  2. Add a new route in `ExchangeRateRoutes.cs` that calls your service method and uses the shared error handler.
+- **To add a new provider or configuration:**
+  1. Add a new section to `appsettings.json`.
+  2. Update the provider config and HttpClient setup if needed.
+- **To add new tests:**
+  1. Add or update test files in `BambooCardTask.Test`.
+  2. Use the test authentication handler to simulate different roles and scenarios.
+
 
 ## Prerequisites
 - .NET 10 SDK
