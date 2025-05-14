@@ -1,6 +1,14 @@
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add health checks: custom and FrankFurter API
+builder.Services.AddHealthChecks()
+    .AddCheck<BambooCardTask.HealthCheck.FrankFurterHealthCheck>(
+        "frankfurter_api",
+        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+        tags: new[] { "ready", "live" });
+
+
 // Configure Serilog for structured logging
 builder.Host.UseSerilog((context, services, configuration) =>
 {
@@ -56,7 +64,7 @@ if (args.Any(a => a.Contains("test", StringComparison.OrdinalIgnoreCase)))
 }
 
 var app = builder.Build();
-
+app.MapHealthChecks("/health");
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {

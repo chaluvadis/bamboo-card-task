@@ -8,6 +8,7 @@ global using System.Threading.RateLimiting;
 // project dependencies
 global using BambooCardTask.Configuration;
 global using BambooCardTask.Filters;
+global using BambooCardTask.HealthCheck;
 global using BambooCardTask.Interfaces;
 global using BambooCardTask.Middleware;
 global using BambooCardTask.Models;
@@ -17,6 +18,7 @@ global using BambooCardTask.Services;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Authorization; // Added for RBAC
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.Extensions.Diagnostics.HealthChecks;
 global using Microsoft.IdentityModel.Tokens;
 global using Microsoft.Net.Http.Headers;
 global using Polly;

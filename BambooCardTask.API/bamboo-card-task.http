@@ -42,3 +42,7 @@ Content-Type: application/json
   "endDate": "2025-05-31",
   "fromCurrency": "EUR"
 }
+
+###
+GET {{bamboo_card_task_HostAddress}}/health
+Accept: application/json
