@@ -1,3 +1,4 @@
+using BambooCardTask.Filters;
 using Microsoft.AspNetCore.Authorization; // Added for RBAC
 
 namespace BambooCardTask.Routes;
@@ -31,7 +32,7 @@ public static class ExchangeRateRoutes
 
             logger.Information("Successfully retrieved exchange rates for base currency: {BaseCurrency}", baseCurrency);
             return Results.Ok(exchangeRates);
-        }).WithName("GetLatestExchangeRates");
+        }).AddEndpointFilter<ExceptionFilter>().WithName("GetLatestExchangeRates");
 
         // Add endpoint for currency conversion
         app.MapPost("api/exchange-rates/convert",
@@ -55,7 +56,7 @@ public static class ExchangeRateRoutes
 
             logger.Information("Successfully converted currency from {FromCurrency} to {TargetCurrencies}", currencyConversionRequest.FromCurrency, string.Join(",", currencyConversionRequest.TargetCurrencies));
             return Results.Ok(exchangeRates);
-        }).WithName("ConvertCurrency");
+        }).AddEndpointFilter<ExceptionFilter>().WithName("ConvertCurrency");
 
         // Add endpoint for historical exchange rates with pagination
         app.MapPost("api/exchange-rates/historical",
@@ -80,6 +81,6 @@ public static class ExchangeRateRoutes
             logger.Information("Successfully fetched historical exchange rates from {StartDate} to {EndDate} for base currency: {BaseCurrency}", historicalExchangeRates.StartDate, historicalExchangeRates.EndDate, historicalExchangeRates.FromCurrency);
 
             return Results.Ok(historicalRates);
-        }).WithName("GetHistoricalExchangeRates");
+        }).AddEndpointFilter<ExceptionFilter>().WithName("GetHistoricalExchangeRates");
     }
 }

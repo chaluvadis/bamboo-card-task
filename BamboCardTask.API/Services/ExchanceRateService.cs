@@ -10,7 +10,8 @@ public class ExchangeRateService(
 
     public async ValueTask<ConversionRatesResponse?> GetConversionRatesAsync(CurrencyConversionRequest currencyConversionRequest)
     {
-        _logger.LogInformation("Fetching conversion rates for {FromCurrency} to {TargetCurrencies}", currencyConversionRequest.FromCurrency, string.Join(",", currencyConversionRequest.TargetCurrencies));
+        _logger.LogInformation("Fetching conversion rates for {FromCurrency} to {TargetCurrencies}",
+                currencyConversionRequest.FromCurrency, string.Join(",", currencyConversionRequest.TargetCurrencies));
 
         var requestUrl = string.IsNullOrEmpty(currencyConversionRequest.FromCurrency)
             ? string.Empty
@@ -38,6 +39,7 @@ public class ExchangeRateService(
         _logger.LogInformation("Fetching historical exchange rates from {StartDate} to {EndDate} for base currency: {BaseCurrency}", historicalExchangeRates.StartDate, historicalExchangeRates.EndDate, historicalExchangeRates.FromCurrency);
 
         var requestUrl = $"{historicalExchangeRates.StartDate:yyyy-MM-dd}..{historicalExchangeRates.EndDate:yyyy-MM-dd}?base={historicalExchangeRates.FromCurrency}";
+
         _logger.LogInformation("GetHistoricalExchangeRatesAsync: {requestUrl}", requestUrl);
 
         return await _httpClient.GetFromJsonAsync<HistoricalExchangeRatesResponse?>(requestUrl);
