@@ -1,28 +1,5 @@
-## Health Checks
 
-The API exposes health check endpoints for readiness and liveness, as well as a custom check for the Frankfurter API dependency.
 
-- **Frankfurter API Health Check:**
-  - The API performs a real HTTP request to `https://frankfurter.dev/` to verify external dependency health.
-  - If the Frankfurter API is unavailable, the health check will report `Unhealthy`.
-
-- **Example Response:**
-  ```json
-  {
-    "status": "Healthy",
-    "checks": [
-      {
-        "name": "frankfurter_api",
-        "status": "Healthy",
-        "description": "Frankfurter API is healthy"
-      }
-    ]
-  }
-  ```
-
-- **Usage:**
-  - Use `/health/ready` for readiness probes and `/health/live` for liveness probes in container orchestrators (Kubernetes, Docker, etc.).
-  - You can also add or extend health checks as needed for your environment.
 # Bamboo Card Task
 
 ## Overview
@@ -170,6 +147,27 @@ This project is a .NET 10 web API application that provides exchange rate servic
 
 7. The API will be available at `http://localhost:5117` by default.
 
+## Health Checks
+
+The API exposes health check endpoints for readiness and liveness, as well as a custom check for the Frankfurter API dependency.
+
+- **Frankfurter API Health Check:**
+  - The API performs a real HTTP request to `https://frankfurter.dev/` to verify external dependency health.
+  - If the Frankfurter API is unavailable, the health check will report `Unhealthy`.
+
+- **Example Response:**
+  ```json
+  {
+    "status": "Healthy",
+    "checks": [
+      {
+        "name": "frankfurter_api",
+        "status": "Healthy",
+        "description": "Frankfurter API is healthy"
+      }
+    ]
+  }
+  ```
 
 ## Running with Docker (.NET 10 Preview 3) for Dev, Test, and PROD Environments
 
