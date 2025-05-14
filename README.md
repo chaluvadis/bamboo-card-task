@@ -26,6 +26,10 @@ This project is a .NET 10 web API application that provides exchange rate servic
 ### 3. Enhanced HttpClient Configuration
 - `HttpClient` is dynamically configured using the provider-specific `ExchangeRateApiUrl`.
 - Logs the provider name, configuration section, and base address during setup for better observability.
+- **Resilience:** Uses Polly to add both retry (with exponential backoff) and circuit breaker policies to all outgoing HTTP requests. This ensures:
+  - Automatic retries for transient errors.
+  - Circuit breaker pattern: after 5 consecutive failures, requests are blocked for 30 seconds to prevent overloading the external API and to allow recovery.
+  - All resilience logic is configured in `Configuration/HttpClientConfiguration.cs` and is applied transparently to all service calls.
 
 ### Example `appsettings.json`
 ```json
@@ -54,6 +58,7 @@ This project is a .NET 10 web API application that provides exchange rate servic
   - **Services**: Business logic is encapsulated in services (e.g., `ExchangeRateService`). Services use a shared private method to handle HTTP and deserialization errors, ensuring DRY code and consistent error handling.
   - **Configuration**: Provider-specific and JWT configuration is loaded from `appsettings.json`.
   - **Middleware**: Custom middleware for logging, correlation IDs, and cache control.
+  - **Resilient HttpClient**: All outgoing HTTP requests use Polly for retry and circuit breaker, as described above.
 - **BambooCardTask.Infrastrcture.Builds**: Infrastructure automation project for CI/CD pipeline generation.
   - Contains scripts and code (using the ADotNet library) to programmatically generate GitHub Actions YAML workflows for building, testing, and deploying the API.
   - Example: `Program.cs` generates a `.github/workflows/dotnet.yml` pipeline for .NET 10, including restore, build, and test steps.
@@ -73,6 +78,7 @@ This project is a .NET 10 web API application that provides exchange rate servic
 ### 2. Service Layer
 - All business logic and external API calls are in the `Services` folder.
 - The `ExchangeRateService` uses a single private method (`HandleServiceCall<T>`) to handle HTTP and deserialization errors, so you never need to repeat try/catch blocks.
+- All HTTP calls use a Polly-powered HttpClient with retry and circuit breaker for resilience.
 - To add a new external API or business rule, add a method to the service and call it from a new route.
 
 ### 3. Error Handling
@@ -82,6 +88,13 @@ This project is a .NET 10 web API application that provides exchange rate servic
 ### 4. Logging
 - Serilog is used for structured logging throughout the app and tests.
 - All service and route actions are logged with context for easy debugging.
+- A custom RequestLoggingMiddleware logs key request/response details for every API call, including:
+  - Client IP address
+  - Correlation ID (for tracing requests end-to-end)
+  - ClientId (from JWT/email claim)
+  - HTTP method and target endpoint
+  - Response code and response time
+  - All logs are enriched with correlation and context for observability and debugging.
 
 ### 5. Testing
 - Tests use a custom authentication handler to simulate all auth scenarios.
@@ -177,14 +190,27 @@ The API will be available at [http://localhost:5117](http://localhost:5117).
 > **Note:** You must have Docker installed. The .NET 10 preview images are used for both build and runtime stages.
 
 ## Testing
+
+### Running Tests and Generating Code Coverage Reports
+
 1. Navigate to the test project directory:
    ```bash
    cd BambooCardTask.Test
    ```
-2. Run the tests:
+2. Run the tests with code coverage using Coverlet:
    ```bash
-   dotnet test
+   dotnet test --collect:"XPlat Code Coverage"
    ```
+   This will generate a coverage file in the `TestResults` directory (format: `.coverage.cobertura.xml`).
+
+3. (Optional) To generate a human-readable HTML report, install [ReportGenerator](https://github.com/danielpalme/ReportGenerator):
+   ```bash
+   dotnet tool install -g dotnet-reportgenerator-globaltool
+   reportgenerator -reports:TestResults/**/coverage.cobertura.xml -targetdir:TestResults/coverage-report -reporttypes:Html
+   ```
+   Open `TestResults/coverage-report/index.html` in your browser to view the coverage report.
+
+> **Tip:** You can add these steps to your CI/CD pipeline for automated coverage reporting.
 
 ## Testing JWT Authentication
 
