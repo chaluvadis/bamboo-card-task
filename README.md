@@ -47,12 +47,17 @@ This project is a .NET 10 web API application that provides exchange rate servic
 ```
 
 
+
 ## Project Structure & Key Concepts
 - **BamboCardTask.API**: Main API application. Contains:
   - **Routes**: All endpoints are defined in a single place using minimal APIs and grouped for clarity. Each route delegates to a service and uses a shared helper for error handling and logging.
   - **Services**: Business logic is encapsulated in services (e.g., `ExchangeRateService`). Services use a shared private method to handle HTTP and deserialization errors, ensuring DRY code and consistent error handling.
   - **Configuration**: Provider-specific and JWT configuration is loaded from `appsettings.json`.
   - **Middleware**: Custom middleware for logging, correlation IDs, and cache control.
+- **BambooCardTask.Infrastrcture.Builds**: Infrastructure automation project for CI/CD pipeline generation.
+  - Contains scripts and code (using the ADotNet library) to programmatically generate GitHub Actions YAML workflows for building, testing, and deploying the API.
+  - Example: `Program.cs` generates a `.github/workflows/dotnet.yml` pipeline for .NET 10, including restore, build, and test steps.
+  - To update or regenerate the pipeline, run this project and commit the generated workflow file.
 - **BambooCardTask.Test**: Unit and integration tests. Includes:
   - Test authentication handler for simulating authorized/unauthorized requests.
   - Tests for all service and route scenarios, including error and edge cases.
