@@ -8,6 +8,7 @@ public static class ExchangeRateRoutes
             .AddEndpointFilter<ExceptionFilter>()
             .WithTags("Exchange Rates");
 
+
         // Add endpoint to retrieve latest exchange rates
         group.MapGet("latest",
         [Authorize(Policy = "UserOnly")]
@@ -18,24 +19,15 @@ public static class ExchangeRateRoutes
             [FromQuery] string? baseCurrency
         ) =>
         {
-            // If baseCurrency is not provided, use the one from providerConfig
             baseCurrency ??= providerConfig.BaseCurrency ?? "EUR";
-
             logger.Information("{ProviderConfig} : {BaseCurrency}", providerConfig.Name, baseCurrency);
-
-            // Fetch data from the service
             var exchangeRates = await exchangeRateService.GetLatestExchangeRatesAsync(baseCurrency);
-
-            if (exchangeRates == null)
-            {
-                logger.Warning("Failed to fetch exchange rates for base currency: {BaseCurrency}", baseCurrency);
-                return Results.BadRequest($"Invalid base currency: {baseCurrency}");
-            }
-
-            logger.Information("Successfully retrieved exchange rates for base currency: {BaseCurrency}", baseCurrency);
-
-            return Results.Ok(exchangeRates);
+            return HandleServiceResult(exchangeRates, logger,
+                failMessage: $"Failed to fetch exchange rates for base currency: {baseCurrency}",
+                successMessage: $"Successfully retrieved exchange rates for base currency: {baseCurrency}",
+                badRequestMessage: $"Invalid base currency: {baseCurrency}");
         }).WithName("GetLatestExchangeRates");
+
 
         // Add endpoint for currency conversion
         group.MapPost("convert",
@@ -47,18 +39,11 @@ public static class ExchangeRateRoutes
         ) =>
         {
             logger.Information("Converting currency from {FromCurrency} to {TargetCurrencies}", currencyConversionRequest.FromCurrency, string.Join(",", currencyConversionRequest.TargetCurrencies));
-
-            // Fetch exchange rates
             var exchangeRates = await exchangeRateService.GetConversionRatesAsync(currencyConversionRequest);
-
-            if (exchangeRates == null)
-            {
-                logger.Warning("Failed to fetch conversion rates for {FromCurrency}", currencyConversionRequest.FromCurrency);
-                return Results.Problem("Failed to fetch exchange rates.");
-            }
-
-            logger.Information("Successfully converted currency from {FromCurrency} to {TargetCurrencies}", currencyConversionRequest.FromCurrency, string.Join(",", currencyConversionRequest.TargetCurrencies));
-            return Results.Ok(exchangeRates);
+            return HandleServiceResult(exchangeRates, logger,
+                failMessage: $"Failed to fetch conversion rates for {currencyConversionRequest.FromCurrency}",
+                successMessage: $"Successfully converted currency from {currencyConversionRequest.FromCurrency} to {string.Join(",", currencyConversionRequest.TargetCurrencies)}",
+                problemMessage: "Failed to fetch exchange rates.");
         }).WithName("ConvertCurrency");
 
         // Add endpoint for historical exchange rates with pagination
@@ -71,19 +56,28 @@ public static class ExchangeRateRoutes
         ) =>
         {
             logger.Information("Fetching historical exchange rates from {StartDate} to {EndDate} for base currency: {BaseCurrency}", historicalExchangeRates.StartDate, historicalExchangeRates.EndDate, historicalExchangeRates.FromCurrency);
-
-            // Fetch historical exchange rates
             var historicalRates = await exchangeRateService.GetHistoricalExchangeRatesAsync(historicalExchangeRates);
-
-            if (historicalRates == null)
-            {
-                logger.Warning("Failed to fetch historical exchange rates from {StartDate} to {EndDate} for base currency: {BaseCurrency}", historicalExchangeRates.StartDate, historicalExchangeRates.EndDate, historicalExchangeRates.FromCurrency);
-                return Results.Problem("Failed to fetch historical exchange rates.");
-            }
-
-            logger.Information("Successfully fetched historical exchange rates from {StartDate} to {EndDate} for base currency: {BaseCurrency}", historicalExchangeRates.StartDate, historicalExchangeRates.EndDate, historicalExchangeRates.FromCurrency);
-
-            return Results.Ok(historicalRates);
+            return HandleServiceResult(historicalRates, logger,
+                failMessage: $"Failed to fetch historical exchange rates from {historicalExchangeRates.StartDate} to {historicalExchangeRates.EndDate} for base currency: {historicalExchangeRates.FromCurrency}",
+                successMessage: $"Successfully fetched historical exchange rates from {historicalExchangeRates.StartDate} to {historicalExchangeRates.EndDate} for base currency: {historicalExchangeRates.FromCurrency}",
+                problemMessage: "Failed to fetch historical exchange rates.");
         }).WithName("GetHistoricalExchangeRates");
+
+    }
+
+    // Helper method to handle null/error results and logging
+    private static IResult HandleServiceResult<T>(T? result, Serilog.ILogger logger, string failMessage, string successMessage, string? badRequestMessage = null, string? problemMessage = null) where T : class
+    {
+        if (result == null)
+        {
+            logger.Warning(failMessage);
+            if (!string.IsNullOrEmpty(badRequestMessage))
+                return Results.BadRequest(badRequestMessage);
+            if (!string.IsNullOrEmpty(problemMessage))
+                return Results.Problem(problemMessage);
+            return Results.Problem("An error occurred.");
+        }
+        logger.Information(successMessage);
+        return Results.Ok(result);
     }
 }

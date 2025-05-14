@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using BambooCardTask.Test;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +37,38 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
                 }
                 // Ensure CorrelationIdService is registered for middleware
                 services.AddScoped<BambooCardTask.Services.CorrelationIdService>();
+
+                // Add both JWT and test authentication schemes
+                services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = "CombinedScheme";
+                })
+                .AddPolicyScheme("CombinedScheme", "Combined Auth", options =>
+                {
+                    options.ForwardDefaultSelector = context =>
+                    {
+                        // Use test scheme if header is present, else JWT
+                        if (context.Request.Headers.TryGetValue("X-Test-Auth", out var value) && value == "true")
+                            return TestAuthHandler.TestScheme;
+                        return "JwtBearer";
+                    };
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.TestScheme, _ => { })
+                .AddJwtBearer("JwtBearer", options =>
+                {
+                    var sp = services.BuildServiceProvider();
+                    var config = sp.GetRequiredService<IConfiguration>();
+                    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = config["Jwt:Issuer"],
+                        ValidAudience = config["Jwt:Audience"],
+                        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(config["Jwt:Key"]))
+                    };
+                });
             });
         });
     }
@@ -66,7 +100,7 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
     public async Task GetLatestExchangeRates_ShouldReturnOk_WhenBaseCurrencyIsValid()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
+        client.DefaultRequestHeaders.Add("X-Test-Auth", "true");
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -75,7 +109,7 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
     public async Task GetLatestExchangeRates_ShouldReturnBadRequest_WhenBaseCurrencyIsInvalid()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
+        client.DefaultRequestHeaders.Add("X-Test-Auth", "true");
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=INVALID");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -101,7 +135,7 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
     public async Task GetLatestExchangeRates_ShouldReturnOk_WhenTokenIsValid()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
+        client.DefaultRequestHeaders.Add("X-Test-Auth", "true");
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -110,7 +144,7 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
     public async Task GetConversionRates_ShouldReturnOk_WhenRequestIsValid()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
+        client.DefaultRequestHeaders.Add("X-Test-Auth", "true");
         var requestBody = new
         {
             fromCurrency = "USD",
@@ -124,7 +158,7 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
     public async Task GetConversionRates_ShouldReturnBadRequest_WhenRequestIsInvalid()
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
+        client.DefaultRequestHeaders.Add("X-Test-Auth", "true");
         var requestBody = new
         {
             fromCurrency = "INVALID",

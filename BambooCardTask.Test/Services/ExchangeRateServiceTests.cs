@@ -1,7 +1,4 @@
 using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using BambooCardTask.Models;
 using BambooCardTask.Services;
 using Microsoft.Extensions.Logging;
@@ -150,5 +147,104 @@ public class ExchangeRateServiceTests
 
         // Assert
         Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task GetLatestExchangeRatesAsync_ReturnsNull_OnNonSuccessStatusCode()
+    {
+        // Arrange
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var loggerMock = new Mock<ILogger<ExchangeRateService>>();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.InternalServerError
+            });
+
+        var httpClient = new HttpClient(httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("https://api.exchangeratesapi.io")
+        };
+        httpClientFactoryMock.Setup(_ => _.CreateClient("ExchangeRateClient")).Returns(httpClient);
+
+        var service = new ExchangeRateService(httpClientFactoryMock.Object, loggerMock.Object);
+
+        // Act
+        var result = await service.GetLatestExchangeRatesAsync("USD");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetLatestExchangeRatesAsync_ReturnsNull_OnDeserializationError()
+    {
+        // Arrange
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var loggerMock = new Mock<ILogger<ExchangeRateService>>();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("not a json")
+            });
+
+        var httpClient = new HttpClient(httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("https://api.exchangeratesapi.io")
+        };
+        httpClientFactoryMock.Setup(_ => _.CreateClient("ExchangeRateClient")).Returns(httpClient);
+
+        var service = new ExchangeRateService(httpClientFactoryMock.Object, loggerMock.Object);
+
+        // Act & Assert
+        var result = await service.GetLatestExchangeRatesAsync("USD");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetLatestExchangeRatesAsync_Handles_EmptyBaseCurrency()
+    {
+        // Arrange
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        var loggerMock = new Mock<ILogger<ExchangeRateService>>();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("{\"rates\":{\"EUR\":0.85}}")
+            });
+
+        var httpClient = new HttpClient(httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("https://api.exchangeratesapi.io")
+        };
+        httpClientFactoryMock.Setup(_ => _.CreateClient("ExchangeRateClient")).Returns(httpClient);
+
+        var service = new ExchangeRateService(httpClientFactoryMock.Object, loggerMock.Object);
+
+        // Act
+        var result = await service.GetLatestExchangeRatesAsync(string.Empty);
+
+        // Assert
+        Assert.NotNull(result); // The service will call with an empty string, which may result in a bad request or default behavior
     }
 }
