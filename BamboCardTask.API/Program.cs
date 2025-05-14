@@ -8,6 +8,9 @@ using Microsoft.Net.Http.Headers;
 using Polly;
 var builder = WebApplication.CreateBuilder(args);
 
+// aspire support
+builder.AddServiceDefaults();
+
 // Bind CurrencyExchange configuration
 builder.Services.Configure<CurrencyExchangeConfig>(builder.Configuration.GetSection("CurrencyExchange"));
 
@@ -49,9 +52,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.WriteIndented = true;
 });
 
+// Request Validation
 builder.Services.AddValidation();
 builder.Services.AddProblemDetails();
 
+// Response Caching
 builder.Services.AddResponseCaching();
 
 // Register ExchangeRateService as a service
@@ -60,6 +65,7 @@ builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
