@@ -335,6 +335,18 @@ eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3d
 JWT Token for Admin:
 eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImp0aSI6IjliYzI0NWJhLWVkYzgtNDM1NC05N2UzLTEzYTc1OTA5ZDljMSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFkbWluQGJhbWJvb2NhcmQuYWUiLCJleHAiOjE3NDcyMjQ0NDAsImlzcyI6ImJhbWJvb2NhcmQuYWUiLCJhdWQiOiJiYW1ib29jYXJkLmFlIn0.gFMKKCzTBqJc8Rlc5QGtkZInXdYRbS0E_o7si4Kw0DGG_pROdL8n5LzJ6cYeXHCiEjNf90avpvMgTp5srNV6bg
 ```
+## Horizontal scaling:
+ The API is stateless and container-ready (see Docker instructions), so it can be horizontally scaled by running multiple container instances behind a load balancer (e.g., in Kubernetes, Docker Swarm, or cloud PaaS). Ensure all configuration and state are externalized (e.g., via environment variables, distributed cache, or managed databases) for true scalability.
+
+## Assumptions
+- The Frankfurter API is available and reliable for all currency data needs.
+- Only one provider (Frankfurter) is currently configured, but the system is designed for easy extension check the Provider config in appsetting.json.
+- JWT authentication is required for all endpoints; roles are enforced as described (User for most endpoints, Admin for historical data).
+- Excluded currencies (TRY, PLN, THB, MXN) are static and configured in settings.
+- The API is intended for demonstration and onboarding; production deployments may require further hardening (e.g., secrets management, advanced monitoring).
+- All endpoints are grouped under `/api/exchange-rates` (or `/api/v1/exchange-rates` for versioning) for consistency and future-proofing.
+- Rate limiting is applied globally per user or host (10 requests/minute by default).
+- All logging, error handling, and resilience (retry/circuit breaker) are handled centrally via middleware and shared helpers.
 
 ## License
 This project is licensed under the MIT License.
