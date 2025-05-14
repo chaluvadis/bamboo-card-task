@@ -11,15 +11,53 @@ This project is a .NET 10 web API application that provides exchange rate servic
 - Retry policies with exponential backoff for handling intermittent API failures.
 - Response caching for improved performance.
 
+## New Features
+
+### 1. Serilog for Structured Logging
+- Integrated Serilog for structured logging.
+- Logs are enriched with contextual information and written to the console.
+- Configuration for Serilog is read from `appsettings.json`.
+
+### 2. Support for Multiple Exchange Rate Providers
+- Added a `Provider` section in `appsettings.json` to specify the active exchange rate provider.
+- Dynamically loads provider-specific configurations (e.g., `BaseCurrency`, `ExchangeRateApiUrl`) based on the `Provider:Name` value.
+- Supports seamless integration with multiple exchange rate servers.
+
+### 3. Enhanced HttpClient Configuration
+- `HttpClient` is dynamically configured using the provider-specific `ExchangeRateApiUrl`.
+- Logs the provider name, configuration section, and base address during setup for better observability.
+
+### Example `appsettings.json`
+```json
+{
+  "Provider": {
+    "Name": "FrankFurter"
+  },
+  "FrankFurter": {
+    "BaseCurrency": "EUR",
+    "ExchangeRateApiUrl": "https://api.frankfurter.dev/v1/",
+    "ExcludedCurrencies": [
+      "TRY",
+      "PLN",
+      "THB",
+      "MXN"
+    ]
+  }
+}
+```
+
 ## Project Structure
-- **BamboCardTask.API**: Contains the main API application.
+- **BamboCardTask.API**: Contains the main API application, including controllers, services, and configuration.
 - **BambooCardTask.Test**: Contains unit tests for the application.
+- **BambooCardTask.ServiceDefaults**: Provides shared service configurations, including resilience and observability.
+- **BambooCardTask.AppHost**: Hosts the application and manages startup configurations.
 
 ## Prerequisites
 - .NET 10 SDK
 - Visual Studio or any code editor of your choice.
 
-## Setup
+## Setup and Running the Application
+
 1. Clone the repository:
    ```bash
    git clone https://github.com/chaluvadis/bamboo-card-task.git
@@ -36,17 +74,15 @@ This project is a .NET 10 web API application that provides exchange rate servic
    ```bash
    dotnet build
    ```
-
-## Running the Application
-1. Navigate to the API project directory:
+5. Navigate to the API project directory:
    ```bash
    cd BamboCardTask.API
    ```
-2. Run the application:
+6. Run the application:
    ```bash
-   dotnet run
+   dotnet run --project BambooCardTask.Api.csproj
    ```
-3. The API will be available at `http://localhost:5117` by default.
+7. The API will be available at `http://localhost:5117` by default.
 
 ## Testing
 1. Navigate to the test project directory:
@@ -90,6 +126,18 @@ This project is a .NET 10 web API application that provides exchange rate servic
     "ExcludedCurrencies": ["TRY", "PLN", "THB", "MXN"]
   }
   ```
+
+## Running the Aspire Project
+
+1. Navigate to the AppHost project directory:
+   ```bash
+   cd BambooCardTask.AppHost
+   ```
+2. Run the application:
+   ```bash
+   dotnet run --project BambooCardTask.AppHost.csproj
+   ```
+3. The Aspire project will be available at the configured URLs in `appsettings.json` or `appsettings.Development.json`.
 
 ## License
 This project is licensed under the MIT License.
