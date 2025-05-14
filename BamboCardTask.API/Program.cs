@@ -1,5 +1,4 @@
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog for structured logging
@@ -76,59 +75,15 @@ builder.Services.AddProblemDetails();
 builder.Services.AddResponseCaching();
 
 // Register ExchangeRateService as a service
-builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+builder.Services.AddSingleton<IExchangeRateService, ExchangeRateService>();
 
 builder.Services.AddOpenApi();
 
-// Retrieve the JWT secret key from configuration
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT secret key is not configured.");
+// Register CorrelationIdService as a scoped service
+builder.Services.AddTransient<ICorrelationIdService, CorrelationIdService>();
 
-// Configure JWT authentication with enhanced security
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.Zero, // Reduce clock skew for token expiration
-            RequireSignedTokens = true, // Ensure tokens are signed
-            ValidAlgorithms = ["HS512"], // Explicitly enforce HS512 algorithm
-            RoleClaimType = ClaimTypes.Role, // Map role claim
-            NameClaimType = ClaimTypes.Email // Map email claim
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = context =>
-            {
-                Log.Warning("Authentication failed: {Error}", context.Exception.Message);
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                Log.Warning("Authentication challenge: {Error}", context.ErrorDescription);
-                return Task.CompletedTask;
-            },
-            OnForbidden = context =>
-            {
-                Log.Warning("Access forbidden: {Path}", context.HttpContext.Request.Path);
-                return Task.CompletedTask;
-            }
-        };
-    });
-
-// Add authorization policies with predefined roles
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
-});
+// Configure JWT authentication and authorization
+builder.Services.ConfigureJwtAuthentication(builder.Configuration);
 
 // Enforce HTTPS
 builder.Services.AddHttpsRedirection(options =>
@@ -156,6 +111,9 @@ app.UseMiddleware<CacheControlMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
+
+// Add CorrelationId to response headers and logs
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 // Map routes from the Routes folder
 app.MapExchangeRateRoutes();

@@ -6,6 +6,7 @@ global using System.Text;
 global using System.Text.Json;
 global using System.Threading.RateLimiting;
 // project dependencies
+global using BambooCardTask.Configuration;
 global using BambooCardTask.Interfaces;
 global using BambooCardTask.Middleware;
 global using BambooCardTask.Models;
@@ -18,3 +19,4 @@ global using Microsoft.IdentityModel.Tokens;
 global using Microsoft.Net.Http.Headers;
 global using Polly;
 global using Serilog;
+global using Serilog.Context;

@@ -1,4 +1,3 @@
-
 namespace BambooCardTask.Middleware;
 
 public class RequestLoggingMiddleware(RequestDelegate next)
@@ -20,7 +19,11 @@ public class RequestLoggingMiddleware(RequestDelegate next)
         var responseCode = context.Response.StatusCode;
         var responseTime = stopwatch.ElapsedMilliseconds;
 
-        Log.Information("Request Details: Client IP: {ClientIp}, ClientId: {ClientId}, HTTP Method: {HttpMethod}, Target Endpoint: {TargetEndpoint}, Response Code: {ResponseCode}, Response Time: {ResponseTime}ms",
-            clientIp, clientId, httpMethod, targetEndpoint, responseCode, responseTime);
+        var correlationId = Guid.NewGuid().ToString("N"); // Use the new .NET 10 format for GUIDs
+        context.Items["CorrelationId"] = correlationId;
+        context.Response.Headers["X-Correlation-ID"] = correlationId; // Add CorrelationId to the response headers
+
+        Log.Information("Correlation ID: {CorrelationId} - Request Details: Client IP: {ClientIp}, ClientId: {ClientId}, HTTP Method: {HttpMethod}, Target Endpoint: {TargetEndpoint}, Response Code: {ResponseCode}, Response Time: {ResponseTime}ms",
+            correlationId, clientIp, clientId, httpMethod, targetEndpoint, responseCode, responseTime);
     }
 }
