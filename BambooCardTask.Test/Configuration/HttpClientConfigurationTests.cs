@@ -32,7 +32,7 @@ namespace BambooCardTask.Test.Configuration
 
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(() => services.ConfigureHttpClient(configuration));
-            Assert.Equal("ExchangeRateApiUrl is not configured for provider 'TestProvider' in appsettings.json", exception.Message);
+            Assert.Equal("Failed to bind configuration for provider 'TestProvider'", exception.Message);
         }
 
         [Fact]

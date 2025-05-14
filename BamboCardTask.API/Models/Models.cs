@@ -1,11 +1,4 @@
 namespace BambooCardTask.Models;
-public class CurrencyExchangeConfig
-{
-    public string BaseCurrency { get; set; } = string.Empty;
-    public string ExchangeRateApiUrl { get; set; } = string.Empty;
-    public List<string> ExcludedCurrencies { get; set; } = [];
-}
-
 public class CurrencyConversionRequest
 {
     [Required]
@@ -60,5 +53,5 @@ public class ProviderConfig
     public string Name { get; set; } = string.Empty;
     public string BaseCurrency { get; set; } = string.Empty;
     public string ExchangeRateApiUrl { get; set; } = string.Empty;
-    public List<string> ExcludedCurrencies { get; set; } = new();
+    public List<string> ExcludedCurrencies { get; set; } = [];
 }

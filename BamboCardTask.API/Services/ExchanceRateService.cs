@@ -31,7 +31,22 @@ public class ExchangeRateService(
             : $"latest?base={baseCurrency}";
         _logger.LogInformation("GetLatestExchangeRatesAsync: {requestUrl}", requestUrl);
 
-        return await _httpClient.GetFromJsonAsync<ExchangeRatesResponse>(requestUrl);
+        try
+        {
+            var response = await _httpClient.GetAsync(requestUrl);
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("External API returned 404 for base currency: {BaseCurrency}", baseCurrency);
+                return null;
+            }
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ExchangeRatesResponse>();
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Error fetching exchange rates for base currency: {BaseCurrency}", baseCurrency);
+            return null;
+        }
     }
 
     public async ValueTask<HistoricalExchangeRatesResponse?> GetHistoricalExchangeRatesAsync(HistoricalExchangeRatesRequest historicalExchangeRates)

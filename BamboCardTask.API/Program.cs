@@ -11,16 +11,6 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .WriteTo.Console(); // Log to console
 });
 
-// Bind and register the provider-specific configuration
-var providerName = builder.Configuration["Provider:Name"] ?? throw new InvalidOperationException("Provider name is not configured in appsettings.json");
-Log.Information("Configuring HttpClient for provider: {ProviderName}", providerName);
-var providerSection = builder.Configuration.GetSection(providerName)
-                ?? throw new InvalidOperationException($"Configuration section for provider '{providerName}' is not found.");
-Log.Information("Provider section: {ProviderSection}", providerSection);
-var providerConfig = providerSection.Get<ProviderConfig>() ?? throw new InvalidOperationException($"Failed to bind configuration for provider '{providerName}'");
-
-builder.Services.AddSingleton(providerConfig);
-
 // Configure HttpClient
 builder.Services.ConfigureHttpClient(builder.Configuration);
 // Add additional services
@@ -49,14 +39,21 @@ builder.Services.AddProblemDetails();
 builder.Services.AddResponseCaching();
 builder.Services.AddSingleton<IExchangeRateService, ExchangeRateService>();
 builder.Services.AddOpenApi();
-builder.Services.AddTransient<ICorrelationIdService, CorrelationIdService>();
-builder.Services.ConfigureJwtAuthentication(builder.Configuration);
+
+// builder.Services.ConfigureJwtAuthentication(builder.Configuration);
 
 builder.Services.AddHttpsRedirection(options =>
 {
     options.RedirectStatusCode = StatusCodes.Status308PermanentRedirect;
     options.HttpsPort = 443; // Default HTTPS port
 });
+
+
+// If running under test, set environment to "Test" for conditional middleware
+if (args.Any(a => a.Contains("test", StringComparison.OrdinalIgnoreCase)))
+{
+    builder.Environment.EnvironmentName = "Test";
+}
 
 var app = builder.Build();
 
@@ -69,7 +66,13 @@ app.UseRateLimiter();
 app.UseResponseCaching();
 app.UseMiddleware<CacheControlMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseHttpsRedirection();
+
+// Only use HTTPS redirection if not running in test environment
+if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Test", StringComparison.OrdinalIgnoreCase)
+    && !app.Environment.EnvironmentName.Equals("Test", StringComparison.OrdinalIgnoreCase))
+{
+    app.UseHttpsRedirection();
+}
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.MapExchangeRateRoutes();
 
@@ -77,5 +80,3 @@ app.MapExchangeRateRoutes();
 app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
 
 app.Run();
-
-

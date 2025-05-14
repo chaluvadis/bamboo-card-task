@@ -16,15 +16,17 @@ public static class HttpClientConfiguration
             ?? throw new InvalidOperationException($"Failed to bind configuration for provider '{providerName}'");
         Log.Information("Provider configuration bound successfully for provider: {ProviderName}", providerName);
 
+        // Throw immediately if ExchangeRateApiUrl is missing or empty
+        if (string.IsNullOrEmpty(providerConfig.ExchangeRateApiUrl))
+        {
+            throw new InvalidOperationException($"ExchangeRateApiUrl is not configured for provider '{providerName}' in appsettings.json");
+        }
+
         services.AddSingleton(providerConfig);
 
         services.AddHttpClient("ExchangeRateClient", client =>
         {
             var baseAddress = providerConfig.ExchangeRateApiUrl;
-            if (string.IsNullOrEmpty(baseAddress))
-            {
-                throw new InvalidOperationException($"ExchangeRateApiUrl is not configured for provider '{providerName}' in appsettings.json");
-            }
             Log.Information("Setting base address for HttpClient: {BaseAddress}", baseAddress);
             client.BaseAddress = new Uri(baseAddress);
         })

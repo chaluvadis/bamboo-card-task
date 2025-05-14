@@ -24,8 +24,8 @@ public class ExchangeRateServiceTests
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                It.IsAny<HttpRequestMessage>(),
-                It.IsAny<CancellationToken>()
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
             )
             .ReturnsAsync(new HttpResponseMessage
             {
@@ -57,7 +57,23 @@ public class ExchangeRateServiceTests
         // Arrange
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var loggerMock = new Mock<ILogger<ExchangeRateService>>();
-        var httpClient = new HttpClient();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("{\"rates\":{\"EUR\":0.85,\"GBP\":0.75}}")
+            });
+
+        var httpClient = new HttpClient(httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("https://api.exchangeratesapi.io")
+        };
         httpClientFactoryMock.Setup(_ => _.CreateClient("ExchangeRateClient")).Returns(httpClient);
 
         var service = new ExchangeRateService(httpClientFactoryMock.Object, loggerMock.Object);
@@ -91,7 +107,7 @@ public class ExchangeRateServiceTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await service.GetConversionRatesAsync(new CurrencyConversionRequest { FromCurrency = "USD", TargetCurrencies = ["EUR"] }));
 
-        Assert.Equal("BaseAddress must be set for the HttpClient.", exception.Message);
+        Assert.Equal("An invalid request URI was provided. Either the request URI must be an absolute URI or BaseAddress must be set.", exception.Message);
     }
 
     [Fact]
@@ -100,7 +116,24 @@ public class ExchangeRateServiceTests
         // Arrange
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var loggerMock = new Mock<ILogger<ExchangeRateService>>();
-        var httpClient = new HttpClient();
+        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
+        httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                // The expected structure is {"base":"USD","startDate":"2024-05-01","endDate":"2024-05-02","rates":{"2024-05-01":{"EUR":0.85},"2024-05-02":{"EUR":0.86}}}
+                Content = new StringContent("{\"base\":\"USD\",\"startDate\":\"2024-05-01\",\"endDate\":\"2024-05-02\",\"rates\":{\"2024-05-01\":{\"EUR\":0.85},\"2024-05-02\":{\"EUR\":0.86}}}")
+            });
+
+        var httpClient = new HttpClient(httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("https://api.exchangeratesapi.io")
+        };
         httpClientFactoryMock.Setup(_ => _.CreateClient("ExchangeRateClient")).Returns(httpClient);
 
         var service = new ExchangeRateService(httpClientFactoryMock.Object, loggerMock.Object);

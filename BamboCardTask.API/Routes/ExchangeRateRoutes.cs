@@ -3,20 +3,25 @@ public static class ExchangeRateRoutes
 {
     public static void MapExchangeRateRoutes(this WebApplication app)
     {
+
+        var group = app.MapGroup("api/exchange-rates")
+            .AddEndpointFilter<ExceptionFilter>()
+            .WithTags("Exchange Rates");
+
         // Add endpoint to retrieve latest exchange rates
-        app.MapGet("api/exchange-rates/latest",
-        [Authorize(Policy = "UserOnly")] // Enforce RBAC for users
+        group.MapGet("latest",
+        [Authorize(Policy = "UserOnly")]
         async (
             IExchangeRateService exchangeRateService,
-            IConfiguration configuration,
-            [FromServices] Serilog.ILogger logger, // Explicitly use Serilog.ILogger
-            string? baseCurrency
+            [FromServices] ProviderConfig providerConfig,
+            [FromServices] Serilog.ILogger logger,
+            [FromQuery] string? baseCurrency
         ) =>
         {
-            logger.Information("Retrieving latest exchange rates for base currency: {BaseCurrency}", baseCurrency);
+            // If baseCurrency is not provided, use the one from providerConfig
+            baseCurrency ??= providerConfig.BaseCurrency ?? "EUR";
 
-            // Use baseCurrency from appsettings.json if not provided
-            baseCurrency ??= configuration["CurrencyExchange:BaseCurrency"] ?? "EUR";
+            logger.Information("{ProviderConfig} : {BaseCurrency}", providerConfig.Name, baseCurrency);
 
             // Fetch data from the service
             var exchangeRates = await exchangeRateService.GetLatestExchangeRatesAsync(baseCurrency);
@@ -24,19 +29,20 @@ public static class ExchangeRateRoutes
             if (exchangeRates == null)
             {
                 logger.Warning("Failed to fetch exchange rates for base currency: {BaseCurrency}", baseCurrency);
-                return Results.Problem("Failed to fetch exchange rates from the API.");
+                return Results.BadRequest($"Invalid base currency: {baseCurrency}");
             }
 
             logger.Information("Successfully retrieved exchange rates for base currency: {BaseCurrency}", baseCurrency);
+
             return Results.Ok(exchangeRates);
-        }).AddEndpointFilter<ExceptionFilter>().WithName("GetLatestExchangeRates");
+        }).WithName("GetLatestExchangeRates");
 
         // Add endpoint for currency conversion
-        app.MapPost("api/exchange-rates/convert",
-        [Authorize(Policy = "UserOnly")] // Enforce RBAC for users
+        group.MapPost("convert",
+        [Authorize(Policy = "UserOnly")]
         async (
             IExchangeRateService exchangeRateService,
-            [FromServices] Serilog.ILogger logger, // Explicitly use Serilog.ILogger
+            [FromServices] Serilog.ILogger logger,
             CurrencyConversionRequest currencyConversionRequest
         ) =>
         {
@@ -53,14 +59,14 @@ public static class ExchangeRateRoutes
 
             logger.Information("Successfully converted currency from {FromCurrency} to {TargetCurrencies}", currencyConversionRequest.FromCurrency, string.Join(",", currencyConversionRequest.TargetCurrencies));
             return Results.Ok(exchangeRates);
-        }).AddEndpointFilter<ExceptionFilter>().WithName("ConvertCurrency");
+        }).WithName("ConvertCurrency");
 
         // Add endpoint for historical exchange rates with pagination
-        app.MapPost("api/exchange-rates/historical",
-        [Authorize(Policy = "AdminOnly")] // Enforce RBAC for admins
+        group.MapPost("historical",
+        [Authorize(Policy = "AdminOnly")]
         async (
             IExchangeRateService exchangeRateService,
-            [FromServices] Serilog.ILogger logger, // Explicitly use Serilog.ILogger
+            [FromServices] Serilog.ILogger logger,
             [FromBody] HistoricalExchangeRatesRequest historicalExchangeRates
         ) =>
         {
@@ -78,6 +84,6 @@ public static class ExchangeRateRoutes
             logger.Information("Successfully fetched historical exchange rates from {StartDate} to {EndDate} for base currency: {BaseCurrency}", historicalExchangeRates.StartDate, historicalExchangeRates.EndDate, historicalExchangeRates.FromCurrency);
 
             return Results.Ok(historicalRates);
-        }).AddEndpointFilter<ExceptionFilter>().WithName("GetHistoricalExchangeRates");
+        }).WithName("GetHistoricalExchangeRates");
     }
 }

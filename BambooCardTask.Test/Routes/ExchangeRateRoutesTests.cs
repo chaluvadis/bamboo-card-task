@@ -1,172 +1,149 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BambooCardTask.Test.Routes;
 
-public class ExchangeRateRoutesTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory = factory;
+    private readonly WebApplicationFactory<Program> _factory;
+    public ExchangeRateRoutesTests(WebApplicationFactory<Program> factory)
+    {
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Test");
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("environment", "Test");
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                var dict = new Dictionary<string, string?>
+                {
+                    ["Jwt:Key"] = "b8e2f3c4d5a6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a9b0c1d2",
+                    ["Jwt:Issuer"] = "bamboocard.ae",
+                    ["Jwt:Audience"] = "bamboocard.ae"
+                };
+                config.AddInMemoryCollection(dict);
+            });
+            builder.ConfigureServices(services =>
+            {
+                // Remove HTTPS redirection for tests
+                var descriptor = services.FirstOrDefault(d => d.ServiceType.FullName == "Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionOptions");
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
+                // Ensure CorrelationIdService is registered for middleware
+                services.AddScoped<BambooCardTask.Services.CorrelationIdService>();
+            });
+        });
+    }
+
+    private static string GenerateTestJwtToken()
+    {
+        var key = "b8e2f3c4d5a6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a9b0c1d2";
+        var issuer = "bamboocard.ae";
+        var audience = "bamboocard.ae";
+        var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key));
+        var credentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(securityKey, Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha512);
+        var claims = new[]
+        {
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "User"),
+            new System.Security.Claims.Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti, System.Guid.NewGuid().ToString()),
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "test@bamboocard.ae")
+        };
+        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: System.DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials
+        );
+        return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
+    }
 
     [Fact]
     public async Task GetLatestExchangeRates_ShouldReturnOk_WhenBaseCurrencyIsValid()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
-        // Act
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
-
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task GetLatestExchangeRates_ShouldReturnBadRequest_WhenBaseCurrencyIsInvalid()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
-        // Act
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=INVALID");
-
-        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
     public async Task GetLatestExchangeRates_ShouldReturnUnauthorized_WhenNoTokenProvided()
     {
-        // Arrange
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Ensure no authentication is configured for this test
-            });
-        }).CreateClient();
-
-        // Act
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
-
-        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetLatestExchangeRates_ShouldReturnOk_WhenTokenProvided()
-    {
-        // Arrange
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Add mock authentication setup here
-            });
-        }).CreateClient();
-
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "valid-token");
-
-        // Act
-        var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task GetLatestExchangeRates_ShouldReturnUnauthorized_WhenTokenIsInvalid()
     {
-        // Arrange
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Mock authentication to simulate invalid token
-            });
-        }).CreateClient();
-
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "invalid-token");
-
-        // Act
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
-
-        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
     public async Task GetLatestExchangeRates_ShouldReturnOk_WhenTokenIsValid()
     {
-        // Arrange
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Mock authentication to simulate valid token
-            });
-        }).CreateClient();
-
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "valid-token");
-
-        // Act
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
         var response = await client.GetAsync("/api/exchange-rates/latest?baseCurrency=USD");
-
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task GetConversionRates_ShouldReturnOk_WhenRequestIsValid()
     {
-        // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
         var requestBody = new
         {
             fromCurrency = "USD",
             targetCurrencies = new[] { "EUR", "GBP" }
         };
-
-        // Act
         var response = await client.PostAsJsonAsync("/api/exchange-rates/convert", requestBody);
-
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task GetConversionRates_ShouldReturnBadRequest_WhenRequestIsInvalid()
     {
-        // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestJwtToken());
         var requestBody = new
         {
             fromCurrency = "INVALID",
             targetCurrencies = new[] { "EUR", "GBP" }
         };
-
-        // Act
         var response = await client.PostAsJsonAsync("/api/exchange-rates/convert", requestBody);
-
-        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
     public async Task GetConversionRates_ShouldReturnUnauthorized_WhenNoTokenProvided()
     {
-        // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         var requestBody = new
         {
             fromCurrency = "USD",
             targetCurrencies = new[] { "EUR", "GBP" }
         };
-
-        // Act
         var response = await client.PostAsJsonAsync("/api/exchange-rates/convert", requestBody);
-
-        // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

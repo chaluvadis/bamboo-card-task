@@ -10,7 +10,15 @@ public class RequestLoggingMiddleware(RequestDelegate next)
 
         Log.Information("Request started: {HttpMethod} {TargetEndpoint}", context.Request.Method, context.Request.Path);
 
-        await _next(context);
+        // Set correlation ID header before response starts (if not already set by other middleware)
+        if (!context.Response.HasStarted && !context.Response.Headers.ContainsKey("X-Correlation-ID"))
+        {
+            var correlationId = context.Items.ContainsKey("CorrelationId")
+                ? context.Items["CorrelationId"]?.ToString()
+                : Guid.NewGuid().ToString("N");
+            context.Response.Headers["X-Correlation-ID"] = correlationId;
+            context.Items["CorrelationId"] = correlationId;
+        }
 
         Log.Information("Request completed: {HttpMethod} {TargetEndpoint} with status code {ResponseCode}", context.Request.Method, context.Request.Path, context.Response.StatusCode);
 
@@ -23,11 +31,11 @@ public class RequestLoggingMiddleware(RequestDelegate next)
         var responseCode = context.Response.StatusCode;
         var responseTime = stopwatch.ElapsedMilliseconds;
 
-        var correlationId = Guid.NewGuid().ToString("N"); // Use the new .NET 10 format for GUIDs
-        context.Items["CorrelationId"] = correlationId;
-        context.Response.Headers["X-Correlation-ID"] = correlationId; // Add CorrelationId to the response headers
+        var correlationIdLog = context.Items.ContainsKey("CorrelationId") ? context.Items["CorrelationId"]?.ToString() : "N/A";
 
         Log.Information("Correlation ID: {CorrelationId} - Request Details: Client IP: {ClientIp}, ClientId: {ClientId}, HTTP Method: {HttpMethod}, Target Endpoint: {TargetEndpoint}, Response Code: {ResponseCode}, Response Time: {ResponseTime}ms",
-            correlationId, clientIp, clientId, httpMethod, targetEndpoint, responseCode, responseTime);
+            correlationIdLog, clientIp, clientId, httpMethod, targetEndpoint, responseCode, responseTime);
+
+        await _next(context);
     }
 }
