@@ -1,9 +1,4 @@
-using BambooCardTask.Interfaces;
-using BambooCardTask.Models;
-using Microsoft.AspNetCore.Mvc;
-
 namespace BambooCardTask.Routes;
-
 public static class ExchangeRateRoutes
 {
     public static void MapExchangeRateRoutes(this WebApplication app)

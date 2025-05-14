@@ -1,7 +1,4 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace BambooCardTask.Models;
-
 public class ValidCurrencyListAttribute : ValidationAttribute
 {
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)

@@ -1,7 +1,4 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace BambooCardTask.Models;
-
 public class CurrencyExchangeConfig
 {
     public string BaseCurrency { get; set; } = string.Empty;
@@ -56,4 +53,12 @@ public class HistoricalExchangeRatesResponse
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public Dictionary<DateOnly, Dictionary<string, double>> Rates { get; set; } = new();
+}
+
+public class ProviderConfig
+{
+    public string Name { get; set; } = string.Empty;
+    public string BaseCurrency { get; set; } = string.Empty;
+    public string ExchangeRateApiUrl { get; set; } = string.Empty;
+    public List<string> ExcludedCurrencies { get; set; } = new();
 }
