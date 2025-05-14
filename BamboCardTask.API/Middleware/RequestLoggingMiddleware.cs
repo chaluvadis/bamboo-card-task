@@ -8,7 +8,11 @@ public class RequestLoggingMiddleware(RequestDelegate next)
     {
         var stopwatch = Stopwatch.StartNew();
 
+        Log.Information("Request started: {HttpMethod} {TargetEndpoint}", context.Request.Method, context.Request.Path);
+
         await _next(context);
+
+        Log.Information("Request completed: {HttpMethod} {TargetEndpoint} with status code {ResponseCode}", context.Request.Method, context.Request.Path, context.Response.StatusCode);
 
         stopwatch.Stop();
 
