@@ -40,7 +40,7 @@ builder.Services.AddResponseCaching();
 builder.Services.AddSingleton<IExchangeRateService, ExchangeRateService>();
 builder.Services.AddOpenApi();
 
-// builder.Services.ConfigureJwtAuthentication(builder.Configuration);
+builder.Services.ConfigureJwtAuthentication(builder.Configuration);
 
 builder.Services.AddHttpsRedirection(options =>
 {
@@ -62,10 +62,12 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
 app.UseRateLimiter();
 app.UseResponseCaching();
 app.UseMiddleware<CacheControlMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
+
 
 // Only use HTTPS redirection if not running in test environment
 if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Test", StringComparison.OrdinalIgnoreCase)
@@ -73,8 +75,16 @@ if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
 {
     app.UseHttpsRedirection();
 }
+
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+
+// Add authentication and authorization before mapping endpoints
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapExchangeRateRoutes();
+
 
 // Ensure Serilog is properly disposed on application shutdown
 app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
