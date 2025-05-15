@@ -44,5 +44,6 @@ Content-Type: application/json
 }
 
 ###
-GET {{bamboo_card_task_HostAddress}}/health
+GET {{bamboo_card_task_HostAddress}}/api/health
+User-Agent: rest-client
 Accept: application/json

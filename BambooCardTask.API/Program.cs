@@ -1,13 +1,13 @@
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Add health checks: custom and FrankFurter API
 builder.Services.AddHealthChecks()
-    .AddCheck<BambooCardTask.HealthCheck.FrankFurterHealthCheck>(
+    .AddCheck<FrankFurterHealthCheck>(
         "frankfurter_api",
-        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
-        tags: new[] { "ready", "live" });
-
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["ready", "live"]);
 
 // Configure Serilog for structured logging
 builder.Host.UseSerilog((context, services, configuration) =>
@@ -46,6 +46,7 @@ builder.Services.AddValidation();
 builder.Services.AddProblemDetails();
 builder.Services.AddResponseCaching();
 builder.Services.AddSingleton<IExchangeRateService, ExchangeRateService>();
+builder.Services.AddScoped<CorrelationIdService>();
 builder.Services.AddOpenApi();
 
 builder.Services.ConfigureJwtAuthentication(builder.Configuration);
@@ -57,14 +58,8 @@ builder.Services.AddHttpsRedirection(options =>
 });
 
 
-// If running under test, set environment to "Test" for conditional middleware
-if (args.Any(a => a.Contains("test", StringComparison.OrdinalIgnoreCase)))
-{
-    builder.Environment.EnvironmentName = "Test";
-}
-
 var app = builder.Build();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("api/health");
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -78,8 +73,7 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 
 
 // Only use HTTPS redirection if not running in test environment
-if (!string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Test", StringComparison.OrdinalIgnoreCase)
-    && !app.Environment.EnvironmentName.Equals("Test", StringComparison.OrdinalIgnoreCase))
+if (app.Environment.IsProduction())
 {
     app.UseHttpsRedirection();
 }
