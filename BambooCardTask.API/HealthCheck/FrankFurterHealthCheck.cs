@@ -8,11 +8,8 @@ public class FrankFurterHealthCheck(IHttpClientFactory httpClientFactory) : IHea
     {
         try
         {
-            var response = await _httpClient.GetFromJsonAsync<HealthCheckResponse>("https://api.frankfurter.dev/", cancellationToken);
-            if (response == null)
-            {
-                return HealthCheckResult.Unhealthy("Frankfurter API is unhealthy");
-            }
+            var response = await _httpClient.GetAsync("https://api.frankfurter.dev/", cancellationToken);
+            response.EnsureSuccessStatusCode();
             return HealthCheckResult.Healthy("Frankfurter API is healthy");
         }
         catch (Exception ex)
