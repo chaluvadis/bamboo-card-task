@@ -26,7 +26,11 @@ public class CacheControlMiddleware(RequestDelegate next, ILogger<CacheControlMi
                 }
                 return Task.CompletedTask;
             });
+            await _next(context);
         }
-        await _next(context);
+        else
+        {
+            await _next(context);
+        }
     }
 }

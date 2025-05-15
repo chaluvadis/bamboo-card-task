@@ -1,11 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
-using BambooCardTask.Test;
+using BambooCardTask.Test.AuthHandler;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 namespace BambooCardTask.Test.Routes;
 
 public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Program>>
@@ -71,29 +71,6 @@ public class ExchangeRateRoutesTests : IClassFixture<WebApplicationFactory<Progr
                 });
             });
         });
-    }
-
-    private static string GenerateTestJwtToken()
-    {
-        var key = "b8e2f3c4d5a6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a9b0c1d2";
-        var issuer = "bamboocard.ae";
-        var audience = "bamboocard.ae";
-        var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key));
-        var credentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(securityKey, Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha512);
-        var claims = new[]
-        {
-            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "User"),
-            new System.Security.Claims.Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti, System.Guid.NewGuid().ToString()),
-            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "test@bamboocard.ae")
-        };
-        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: System.DateTime.UtcNow.AddHours(1),
-            signingCredentials: credentials
-        );
-        return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
     }
 
     [Fact]

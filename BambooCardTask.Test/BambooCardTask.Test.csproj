@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../BamboCardTask.API/BambooCardTask.Api.csproj" />
+    <ProjectReference Include="../BambooCardTask.API/BambooCardTask.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
