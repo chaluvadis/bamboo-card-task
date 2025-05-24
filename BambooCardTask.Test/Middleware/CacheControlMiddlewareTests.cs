@@ -27,7 +27,11 @@ public class CacheControlMiddlewareTests
         // Write to the response body and flush to ensure OnStarting is triggered
         await context.Response.Body.WriteAsync(new byte[] { 1 }, 0, 1);
         await context.Response.Body.FlushAsync();
-        await context.Response.GetTypedHeaders().CacheControl.SetAsync("public, max-age=60");
+        context.Response.GetTypedHeaders().CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue
+        {
+            Public = true,
+            MaxAge = TimeSpan.FromSeconds(60)
+        };
 
         // Assert
         var cacheControl = context.Response.GetTypedHeaders().CacheControl.ToString();
