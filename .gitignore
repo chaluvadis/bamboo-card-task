@@ -1,3 +1,14 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+terraform.tfvars
+terraform.tfvars.json
+.terraform.lock.hcl
+.terraformrc
+terraform.rc
 # Ignore build outputs
 bin/
 obj/
@@ -29,3 +40,5 @@ TestResults/
 # Environment files
 .env
 .env.*
+
+.terraform
