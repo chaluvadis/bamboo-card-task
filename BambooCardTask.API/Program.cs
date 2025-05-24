@@ -37,7 +37,7 @@ builder.Services.AddResponseCaching();
 builder.Services.AddSingleton<IExchangeRateService, ExchangeRateService>();
 builder.Services.AddScoped<CorrelationIdService>();
 builder.Services.AddOpenApi();
-builder.Services.ConfigureJwtAuthentication(builder.Configuration);
+
 builder.Services.AddHttpsRedirection(options =>
 {
     options.RedirectStatusCode = StatusCodes.Status308PermanentRedirect;
